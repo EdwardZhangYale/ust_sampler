@@ -1,0 +1,8 @@
+[package]
+name = "ust_sampler"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+fastrand = "2.4.1"
+rayon = "1.12.0"
