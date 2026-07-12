@@ -41,7 +41,9 @@ fn main() {
     
     // 3. Spawn a dedicated writer thread to write epsilons to a file as they arrive
     let writer_thread = thread::spawn(move || {
-        let file = File::create("epsilons.txt").expect("Could not create output file");
+        let filename = format!("epsilons{}x{}-{}.txt", width, height, num_samples);
+        let file = File::create(&filename).expect("Could not create output file");
+
         let mut writer = BufWriter::new(file);
         let mut count = 0;
         
@@ -55,7 +57,7 @@ fn main() {
                 break;
             }
         }
-        println!("Finished collecting {} samples. Saved to epsilons.txt", num_samples);
+        println!("Finished collecting {} samples. Saved to {}", num_samples, filename);
     });
 
     // 4. Parallel Worker Pool
