@@ -37,7 +37,7 @@ fn main() {
     println!("Generated {}x{} grid ({} nodes). Searching for {} samples...", width, height, num_nodes, num_samples);
 
     // 2. Setup a channel for worker threads to send epsilons to the main writer thread
-    let (tx, rx) = mpsc::sync_channel::<f64>(100);
+    let (tx, rx) = mpsc::sync_channel::<(f64, usize)>(100);
     
     // 3. Spawn a dedicated writer thread to write epsilons to a file as they arrive
     let writer_thread = thread::spawn(move || {
@@ -47,9 +47,9 @@ fn main() {
         let mut writer = BufWriter::new(file);
         let mut count = 0;
         
-        while let Ok(eps) = rx.recv() {
+        while let Ok((eps, boundary_length)) = rx.recv() {
             count += 1;
-            writeln!(writer, "{}", eps).unwrap();
+            writeln!(writer, "{}, {}", eps, boundary_length).unwrap();
             if count % 10 == 0 {
                 println!("Collected {} / {} samples...", count, num_samples);
             }
@@ -138,11 +138,14 @@ fn main() {
                         // Find bounds of the interface boundary B1 U B2
                         let mut min_x = width;
                         let mut max_x = 0;
+                        let mut boundary_length = 0;
                         
                         for i in 0..num_nodes {
                             if in_v1[i] {
                                 for &neighbor in &adj[i] {
                                     if !in_v1[neighbor] {
+                                        boundary_length += 1;
+                                        
                                         // Both i and neighbor are on the boundary!
                                         let x1 = i % width;
                                         let x2 = neighbor % width;
@@ -159,7 +162,7 @@ fn main() {
                         
                         // Send successful epsilon to the writer thread (ignore if closed)
                         // Send successful epsilon to the writer thread and stop if the channel is closed
-                        if tx.send(eps).is_err() { 
+                        if tx.send((eps, boundary_length)).is_err() { 
                             break; 
                         }
                     }
